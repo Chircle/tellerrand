@@ -10,6 +10,8 @@ export default function Settings() {
   const [editingAvatar, setEditingAvatar] = useState(false);
   const [confirmSkip, setConfirmSkip] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [editingStart, setEditingStart] = useState(false);
+  const [newStart, setNewStart] = useState(group?.seasonStart || currentMonthId());
 
   const monthId = currentMonthId();
   const alreadySkipped = group?.skippedMonths?.includes(monthId);
@@ -21,6 +23,13 @@ export default function Settings() {
     });
     setSaving(false);
     setConfirmSkip(false);
+  };
+
+  const saveStart = async () => {
+    setSaving(true);
+    await updateDoc(doc(db, "groups", group.id), { seasonStart: newStart });
+    setSaving(false);
+    setEditingStart(false);
   };
 
   const saveAvatar = async (avatar) => {
@@ -61,6 +70,20 @@ export default function Settings() {
         <p>Einladungscode: <span className="chip">{group.inviteCode}</span></p>
         <p>{group.memberIds.length} / 5 Mitgliedern</p>
         <p>Läuft seit {monthLabel(group.seasonStart)}</p>
+        {editingStart ? (
+          <div className="stack" style={{ width: "100%" }}>
+            <p style={{ fontSize: 13 }}>Verschiebt nur, ab wann Monate im Buch auftauchen — nützlich, um Gerichte von vor der App-Nutzung nachzutragen. Die Rotation wird ab diesem Punkt neu durchgezählt.</p>
+            <input type="month" value={newStart} onChange={(e) => setNewStart(e.target.value)} />
+            <div style={{ display: "flex", gap: 8 }}>
+              <button className="btn secondary" onClick={() => setEditingStart(false)}>Abbrechen</button>
+              <button className="btn" disabled={saving} onClick={saveStart}>{saving ? "Speichern…" : "Speichern"}</button>
+            </div>
+          </div>
+        ) : (
+          <button className="btn secondary" onClick={() => { setNewStart(group.seasonStart); setEditingStart(true); }}>
+            Frühere Monate nachtragen
+          </button>
+        )}
       </div>
 
       <div className="card stack" style={{ alignItems: "flex-start" }}>

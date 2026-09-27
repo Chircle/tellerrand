@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { useApp } from "../context/AppContext.jsx";
-import { db, doc, getDoc, collection, onSnapshot } from "../firebase.js";
+import { db, doc, getDoc, collection, onSnapshot, auth } from "../firebase.js";
 import { currentMonthId, monthLabel, addMonths } from "../utils/rotation.js";
 import Avatar from "../components/Avatar.jsx";
 import Stars from "../components/Stars.jsx";
@@ -17,7 +18,7 @@ function allMonthsSince(seasonStart) {
   return months;
 }
 
-function Page({ groupId, monthId, members }) {
+function Page({ groupId, monthId, members, skippedMonths }) {
   const [monthDoc, setMonthDoc] = useState(undefined);
   const [entries, setEntries] = useState({});
 
@@ -33,7 +34,9 @@ function Page({ groupId, monthId, members }) {
     return unsub;
   }, [groupId, monthId]);
 
-  const isSkipped = monthDoc === null;
+  const isSkipped = skippedMonths.includes(monthId);
+  const myUid = auth.currentUser.uid;
+  const myEntry = entries[myUid];
 
   return (
     <div className="card stack" style={{ minHeight: 380 }}>
@@ -41,21 +44,34 @@ function Page({ groupId, monthId, members }) {
 
       {monthDoc === undefined && <p>Lädt…</p>}
 
-      {monthDoc === null && (
+      {isSkipped && (
         <div className="stack" style={{ alignItems: "center", padding: "30px 0" }}>
           <div style={{ fontSize: 40 }}>🏖️</div>
           <p>Dieser Monat wurde ausgesetzt.</p>
         </div>
       )}
 
-      {monthDoc && (
+      {!isSkipped && monthDoc === null && (
+        <div className="stack" style={{ alignItems: "center", padding: "20px 0" }}>
+          <p>Für {monthLabel(monthId)} ist noch kein Gericht eingetragen.</p>
+          <Link to={`/set-dish?month=${monthId}`} className="btn">Gericht nachtragen</Link>
+        </div>
+      )}
+
+      {!isSkipped && monthDoc && (
         <>
-          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-            <Avatar avatar={members[monthDoc.hostUid]?.avatar} size={30} />
-            <span className="chip">{members[monthDoc.hostUid]?.displayName}</span>
+          <div style={{ display: "flex", gap: 8, alignItems: "center", justifyContent: "space-between" }}>
+            <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+              <Avatar avatar={members[monthDoc.hostUid]?.avatar} size={30} />
+              <span className="chip">{members[monthDoc.hostUid]?.displayName}</span>
+            </div>
+            <Link to={`/set-dish?month=${monthId}`} className="btn ghost" style={{ padding: "4px 10px", fontSize: 13 }}>Bearbeiten</Link>
           </div>
           <h2 style={{ fontSize: 20 }}>{monthDoc.dishName}</h2>
           {monthDoc.introText && <p>{monthDoc.introText}</p>}
+          {monthDoc.referenceImageUrl && (
+            <img src={monthDoc.referenceImageUrl} alt="" style={{ width: "100%", borderRadius: "var(--radius-m)" }} />
+          )}
 
           <div className="stack">
             {Object.entries(entries).map(([uid, entry]) => (
@@ -69,6 +85,10 @@ function Page({ groupId, monthId, members }) {
             ))}
             {Object.keys(entries).length === 0 && <p>Noch keine Bewertungen.</p>}
           </div>
+
+          <Link to={`/submit?month=${monthId}`} className="btn secondary block">
+            {myEntry ? "Deine Bewertung bearbeiten" : "Deine Bewertung nachtragen"}
+          </Link>
         </>
       )}
     </div>
@@ -108,7 +128,7 @@ export default function Book() {
   return (
     <div className="screen" onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
       <h2>Das Buch</h2>
-      <Page groupId={group.id} monthId={months[index]} members={members} />
+      <Page groupId={group.id} monthId={months[index]} members={members} skippedMonths={group.skippedMonths || []} />
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <button className="btn secondary" onClick={() => go(-1)} disabled={index === 0}>‹ Zurück</button>
         <span className="chip">{index + 1} / {months.length}</span>

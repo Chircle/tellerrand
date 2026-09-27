@@ -1,15 +1,16 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useApp } from "../context/AppContext.jsx";
 import { db, doc, setDoc, getDoc, auth, serverTimestamp } from "../firebase.js";
-import { currentMonthId } from "../utils/rotation.js";
+import { currentMonthId, monthLabel } from "../utils/rotation.js";
 import { compressImage } from "../utils/imageCompress.js";
 import Stars from "../components/Stars.jsx";
 
 export default function Submit() {
   const { group } = useApp();
   const navigate = useNavigate();
-  const monthId = currentMonthId();
+  const [searchParams] = useSearchParams();
+  const monthId = searchParams.get("month") || currentMonthId();
 
   const [photo, setPhoto] = useState(null);
   const [rating, setRating] = useState(0);
@@ -25,6 +26,10 @@ export default function Submit() {
         setPhoto(d.photoUrl || null);
         setRating(d.rating || 0);
         setComment(d.comment || "");
+      } else {
+        setPhoto(null);
+        setRating(0);
+        setComment("");
       }
       setLoaded(true);
     })();
@@ -45,14 +50,17 @@ export default function Submit() {
       createdAt: serverTimestamp(),
     });
     setBusy(false);
-    navigate("/");
+    navigate(monthId === currentMonthId() ? "/" : "/book");
   };
+
+  const isPast = monthId !== currentMonthId();
 
   if (!loaded) return null;
 
   return (
     <div className="screen">
-      <h2>Dein Gericht</h2>
+      <h2>Dein Gericht — {monthLabel(monthId)}</h2>
+      {isPast && <p>Du trägst hier einen vergangenen Monat nach.</p>}
 
       <div className="stack">
         <label style={{ fontSize: 13 }}>Foto</label>

@@ -1,6 +1,7 @@
 import { HashRouter, Routes, Route, NavLink, Navigate } from "react-router-dom";
 import { AppProvider, useApp } from "./context/AppContext.jsx";
 import Login from "./pages/Login.jsx";
+import VerifyEmail from "./pages/VerifyEmail.jsx";
 import Onboarding from "./pages/Onboarding.jsx";
 import Dashboard from "./pages/Dashboard.jsx";
 import SetDish from "./pages/SetDish.jsx";
@@ -32,6 +33,11 @@ function Gate() {
   }
   if (!authUser) {
     return <Login />;
+  }
+  // Google-Konten kommen von Google immer schon mit emailVerified: true.
+  // Nur bei E-Mail/Passwort-Registrierung muss der Link erst bestätigt werden.
+  if (!authUser.emailVerified) {
+    return <VerifyEmail />;
   }
   if (profile === null || (profile && !profile.groupId)) {
     return <Onboarding />;

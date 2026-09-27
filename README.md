@@ -9,7 +9,7 @@ Foto hoch und bewerten in 0,5-Schritten.
 ### 1. Firebase-Projekt anlegen
 
 1. Auf [console.firebase.google.com](https://console.firebase.google.com) ein neues Projekt erstellen.
-2. **Authentication** → Sign-in method → **Google** aktivieren.
+2. **Authentication** → Sign-in method → **Google** aktivieren, und zusätzlich **E-Mail/Passwort** aktivieren (für Leute ohne Google-Konto).
 3. **Firestore Database** → Datenbank im **produktiven Modus** erstellen (Region z. B. `eur3`).
 4. Unter Projekteinstellungen → "Meine Apps" → Web-App (`</>`) hinzufügen. Firebase zeigt dir danach die Config-Werte (`apiKey`, `authDomain`, usw.) — die brauchst du gleich.
 
@@ -29,6 +29,20 @@ firebase deploy --only firestore:rules
 ```
 
 Alternativ: Inhalt von `firestore.rules` im Firebase-Konsolen-Editor (Firestore → Regeln) einfügen und veröffentlichen.
+
+## Sicherheit bei der Registrierung
+
+Bei E-Mail/Passwort-Registrierung ist der Zugriff auf die App erst nach
+Bestätigung des Verifizierungslinks möglich (`VerifyEmail.jsx`). Das ist
+nicht nur eine Frontend-Prüfung: `firestore.rules` verlangt für **jeden
+Schreibzugriff** `request.auth.token.email_verified == true`. Selbst wenn
+jemand den Frontend-Check umgeht, blockt die Datenbank selbst. Google-Konten
+sind automatisch verifiziert und daher nie betroffen.
+
+Zusätzlich sinnvoll, aber nicht eingebaut (optionaler Ausbau bei Bedarf):
+
+- **Firebase App Check** (reCAPTCHA v3) gegen automatisierte Registrierungs-Bots.
+- Die Firebase-Konsole limitiert Login-Versuche bei Passwort-Angriffen bereits automatisch (kein eigener Code nötig).
 
 ### 3. Lokale Entwicklung
 
