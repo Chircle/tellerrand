@@ -88,6 +88,31 @@ Bis die existieren, funktioniert die App trotzdem — nur das
 schnellsten: `public/favicon.svg` in ein PNG-Tool (z. B. favicon.io)
 exportieren.
 
+### 7. Freigabe-Mails für Beitrittsanfragen (optional)
+
+Beitritte per Einladungscode landen erst als Anfrage; der Gruppenersteller
+muss sie unter Einstellungen bestätigen. Damit er zusätzlich per Mail
+benachrichtigt wird, brauchst du die offizielle Firebase-Extension
+**"Trigger Email from Firestore"**:
+
+1. Dein Firebase-Projekt muss dafür auf **Blaze** laufen (die Extension nutzt intern eine Cloud Function — kostenpflichtiger Tarif, aber bei eurem Volumen praktisch gratis, siehe Budget-Alarm-Hinweis oben bei den Fotos).
+2. In der Firebase-Konsole: **Extensions** → **Erkunden** → "Trigger Email from Firestore" installieren.
+3. Als Collection-Pfad `mail` eintragen (passt zu dem, was `Onboarding.jsx` schreibt).
+4. SMTP-Zugangsdaten hinterlegen — am einfachsten mit einem Google-App-Passwort für ein Gmail-Konto, oder ein Gratis-Tarif bei SendGrid/Mailgun.
+
+Ohne installierte Extension funktioniert die App trotzdem ganz normal — es
+landet nur ein ungenutztes Dokument in der `mail`-Collection, das niemand
+abholt. Die Freigabe selbst (Annehmen/Ablehnen in den Einstellungen)
+funktioniert unabhängig davon immer, die Mail ist nur ein Zusatz-Hinweis.
+
+## Beitritts-Workflow
+
+Einladungscode eingeben erstellt eine Anfrage (`groups/{id}/joinRequests/{uid}`),
+keinen Sofortbeitritt. Der Gruppenersteller (`createdBy`) sieht offene
+Anfragen unter Einstellungen und kann annehmen oder ablehnen. Wer wartet,
+sieht einen eigenen Warte-Screen (`PendingApproval.jsx`) mit der Möglichkeit,
+die Anfrage zurückzuziehen.
+
 ## Warum Fotos in Firestore statt Firebase Storage?
 
 Seit Februar 2026 braucht Firebase Storage zwingend den kostenpflichtigen

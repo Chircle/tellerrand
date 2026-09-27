@@ -1,9 +1,63 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useApp } from "../context/AppContext.jsx";
-import { db, doc, updateDoc, setDoc, arrayUnion, logout, auth } from "../firebase.js";
+import { db, doc, updateDoc, deleteDoc, arrayUnion, logout, auth, collection, onSnapshot } from "../firebase.js";
 import { currentMonthId, monthLabel } from "../utils/rotation.js";
 import Avatar from "../components/Avatar.jsx";
 import AvatarEditor from "./AvatarEditor.jsx";
+
+function JoinRequests({ group }) {
+  const [requests, setRequests] = useState({});
+  const [busyUid, setBusyUid] = useState(null);
+  const isAdmin = group.createdBy === auth.currentUser.uid;
+
+  useEffect(() => {
+    if (!isAdmin) return;
+    const unsub = onSnapshot(collection(db, "groups", group.id, "joinRequests"), (snap) => {
+      const map = {};
+      snap.forEach((d) => (map[d.id] = d.data()));
+      setRequests(map);
+    });
+    return unsub;
+  }, [group.id, isAdmin]);
+
+  if (!isAdmin) return null;
+
+  const entries = Object.entries(requests);
+  if (entries.length === 0) return null;
+
+  const accept = async (uid) => {
+    setBusyUid(uid);
+    await updateDoc(doc(db, "groups", group.id), {
+      memberIds: arrayUnion(uid),
+      rotationOrder: arrayUnion(uid),
+    });
+    await deleteDoc(doc(db, "groups", group.id, "joinRequests", uid));
+    setBusyUid(null);
+  };
+
+  const reject = async (uid) => {
+    setBusyUid(uid);
+    await deleteDoc(doc(db, "groups", group.id, "joinRequests", uid));
+    setBusyUid(null);
+  };
+
+  return (
+    <div className="card stack" style={{ alignItems: "flex-start" }}>
+      <p style={{ fontSize: 13 }}>Offene Beitrittsanfragen</p>
+      {entries.map(([uid, req]) => (
+        <div key={uid} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%", gap: 8 }}>
+          <span>{req.displayName}</span>
+          <div style={{ display: "flex", gap: 6 }}>
+            <button className="btn ghost" style={{ padding: "6px 10px" }} disabled={busyUid === uid} onClick={() => reject(uid)}>Ablehnen</button>
+            <button className="btn" style={{ padding: "6px 14px" }} disabled={busyUid === uid || group.memberIds.length >= 5} onClick={() => accept(uid)}>
+              {group.memberIds.length >= 5 ? "Gruppe voll" : "Annehmen"}
+            </button>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
 
 export default function Settings() {
   const { profile, group } = useApp();
@@ -52,6 +106,8 @@ export default function Settings() {
   return (
     <div className="screen">
       <h2>Einstellungen</h2>
+
+      <JoinRequests group={group} />
 
       <div className="card stack" style={{ alignItems: "flex-start" }}>
         <p style={{ fontSize: 13 }}>Dein Profil</p>

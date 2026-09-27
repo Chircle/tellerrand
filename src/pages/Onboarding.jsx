@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useApp } from "../context/AppContext.jsx";
-import { auth, db, doc, setDoc, updateDoc, getDoc, arrayUnion } from "../firebase.js";
+import { auth, db, doc, setDoc, updateDoc, getDoc, serverTimestamp } from "../firebase.js";
 import AvatarEditor from "./AvatarEditor.jsx";
 
 function makeInviteCode() {
@@ -74,6 +74,8 @@ function GroupStep({ profile, onDone }) {
         seasonStart: new Date().toISOString().slice(0, 7),
         skippedMonths: [],
         createdBy: auth.currentUser.uid,
+        // Für die Beitritts-Benachrichtigung per Mail an den Ersteller.
+        creatorEmail: auth.currentUser.email || null,
       });
       // Eigene, schlanke Lookup-Collection: Code -> Gruppen-ID.
       // Macht den Beitritt per Code möglich, ohne eine Firestore-Query mit
@@ -92,10 +94,6 @@ function GroupStep({ profile, onDone }) {
     setBusy(true);
     setError("");
     try {
-      // Kleine Einschränkung: da Firestore keine "where inviteCode =="-Abfrage
-      // ohne Index in dieser einfachen App hat, wird der Code als Dokument-ID-
-      // Präfix erwartet — praktikabler: wir bitten um die Gruppen-ID direkt.
-      // Für eine schlanke App reicht ein Lookup über eine eigene Codes-Collection:
       const codeSnap = await getDoc(doc(db, "inviteCodes", code.trim().toUpperCase()));
       if (!codeSnap.exists()) {
         setError("Code nicht gefunden. Bitte prüfen.");
@@ -110,15 +108,43 @@ function GroupStep({ profile, onDone }) {
         setBusy(false);
         return;
       }
-      if ((groupSnap.data().memberIds || []).length >= 5) {
+      const groupData = groupSnap.data();
+      if ((groupData.memberIds || []).includes(auth.currentUser.uid)) {
+        setError("Du bist schon Mitglied dieser Gruppe.");
+        setBusy(false);
+        return;
+      }
+      if ((groupData.memberIds || []).length >= 5) {
         setError("Diese Gruppe ist bereits voll (max. 5 Personen).");
         setBusy(false);
         return;
       }
-      await updateDoc(groupRef, {
-        memberIds: arrayUnion(auth.currentUser.uid),
-        rotationOrder: arrayUnion(auth.currentUser.uid),
+
+      // Kein Sofortbeitritt mehr: Die Anfrage landet als eigenes Dokument,
+      // der Gruppenersteller muss sie erst annehmen (siehe Settings.jsx).
+      await setDoc(doc(db, "groups", groupId, "joinRequests", auth.currentUser.uid), {
+        displayName: profile.displayName,
+        requestedAt: serverTimestamp(),
       });
+
+      // Benachrichtigung an den Ersteller: schreibt ein Dokument in die
+      // "mail"-Collection, die von der Firebase-Extension "Trigger Email
+      // from Firestore" beobachtet wird und daraus automatisch eine Mail
+      // verschickt. Ohne installierte Extension passiert hier einfach nichts
+      // Schädliches — das Dokument liegt dann nur ungenutzt in der DB.
+      if (groupData.creatorEmail) {
+        await setDoc(doc(db, "mail", crypto.randomUUID()), {
+          to: [groupData.creatorEmail],
+          message: {
+            subject: `Neue Beitrittsanfrage für "${groupData.name}"`,
+            text: `${profile.displayName} möchte deiner Tellerrand-Gruppe "${groupData.name}" beitreten. Öffne die App unter den Einstellungen, um die Anfrage anzunehmen oder abzulehnen.`,
+          },
+        });
+      }
+
+      // Eigenes Profil zeigt jetzt auf die Gruppe, App zeigt ab hier den
+      // "Warte auf Freigabe"-Screen (PendingApproval.jsx), bis der Ersteller
+      // zugesagt hat.
       await updateDoc(doc(db, "users", auth.currentUser.uid), { groupId });
       onDone();
     } catch (e) {

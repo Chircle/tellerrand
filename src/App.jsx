@@ -3,6 +3,7 @@ import { AppProvider, useApp } from "./context/AppContext.jsx";
 import Login from "./pages/Login.jsx";
 import VerifyEmail from "./pages/VerifyEmail.jsx";
 import Onboarding from "./pages/Onboarding.jsx";
+import PendingApproval from "./pages/PendingApproval.jsx";
 import Dashboard from "./pages/Dashboard.jsx";
 import SetDish from "./pages/SetDish.jsx";
 import Submit from "./pages/Submit.jsx";
@@ -44,6 +45,11 @@ function Gate() {
   }
   if (!group) {
     return <div className="center-screen"><p>Lädt Gruppe…</p></div>;
+  }
+  // Profil zeigt auf eine Gruppe, aber die eigene uid steht noch nicht in
+  // memberIds -> die Beitrittsanfrage wartet noch auf Freigabe.
+  if (!group.memberIds.includes(authUser.uid)) {
+    return <PendingApproval />;
   }
 
   return (
