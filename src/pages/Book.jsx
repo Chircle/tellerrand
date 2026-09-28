@@ -5,6 +5,7 @@ import { db, doc, getDoc, collection, onSnapshot, auth } from "../firebase.js";
 import { currentMonthId, monthLabel, addMonths } from "../utils/rotation.js";
 import Avatar from "../components/Avatar.jsx";
 import Stars from "../components/Stars.jsx";
+import Lightbox from "../components/Lightbox.jsx";
 
 function allMonthsSince(seasonStart) {
   const months = [];
@@ -20,14 +21,20 @@ function allMonthsSince(seasonStart) {
 
 function EntryRow({ entry, member }) {
   const [open, setOpen] = useState(false);
-
+  const [zoom, setZoom] = useState(false);
+  
   return (
     <div className="stack" style={{ gap: 6 }}>
       <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
         <Avatar avatar={member?.avatar} size={30} />
-        {entry.photoUrl && (
-          <img src={entry.photoUrl} alt="" style={{ width: 44, height: 44, objectFit: "cover", borderRadius: 8 }} />
-        )}
+          {entry.photoUrl && (
+            <img
+              src={entry.photoUrl}
+              alt=""
+              onClick={() => setZoom(true)}
+              style={{ width: 44, height: 44, objectFit: "cover", borderRadius: 8, cursor: "zoom-in" }}
+            />
+          )}
         <div>
           <div style={{ fontSize: 13, color: "var(--text)", fontWeight: 600 }}>{member?.displayName}</div>
           <Stars value={entry.rating} readOnly />
@@ -48,6 +55,7 @@ function EntryRow({ entry, member }) {
           {entry.comment}
         </p>
       )}
+      {zoom && <Lightbox src={entry.photoUrl} onClose={() => setZoom(false)} />}
     </div>
   );
 }
