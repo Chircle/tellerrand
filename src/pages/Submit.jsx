@@ -64,7 +64,7 @@ export default function Submit() {
 
       <div className="stack">
         <label style={{ fontSize: 13 }}>Foto</label>
-        <input type="file" accept="image/*" capture="environment" onChange={handlePhoto} />
+        <input type="file" accept="image/*" onChange={handlePhoto} />
         {photo && <img src={photo} alt="Dein Gericht" style={{ width: "100%", borderRadius: "var(--radius-m)" }} />}
       </div>
 

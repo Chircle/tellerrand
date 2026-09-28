@@ -18,6 +18,40 @@ function allMonthsSince(seasonStart) {
   return months;
 }
 
+function EntryRow({ entry, member }) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <div className="stack" style={{ gap: 6 }}>
+      <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+        <Avatar avatar={member?.avatar} size={30} />
+        {entry.photoUrl && (
+          <img src={entry.photoUrl} alt="" style={{ width: 44, height: 44, objectFit: "cover", borderRadius: 8 }} />
+        )}
+        <div>
+          <div style={{ fontSize: 13, color: "var(--text)", fontWeight: 600 }}>{member?.displayName}</div>
+          <Stars value={entry.rating} readOnly />
+        </div>
+      </div>
+
+      {entry.comment && (
+        <p
+          onClick={() => setOpen((o) => !o)}
+          style={{
+            cursor: "pointer",
+            fontSize: 14,
+            ...(open
+              ? {}
+              : { display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }),
+          }}
+        >
+          {entry.comment}
+        </p>
+      )}
+    </div>
+  );
+}
+
 function Page({ groupId, monthId, members, skippedMonths }) {
   const [monthDoc, setMonthDoc] = useState(undefined);
   const [entries, setEntries] = useState({});
@@ -75,13 +109,7 @@ function Page({ groupId, monthId, members, skippedMonths }) {
 
           <div className="stack">
             {Object.entries(entries).map(([uid, entry]) => (
-              <div key={uid} style={{ display: "flex", gap: 10, alignItems: "center" }}>
-                <Avatar avatar={members[uid]?.avatar} size={30} />
-                {entry.photoUrl && (
-                  <img src={entry.photoUrl} alt="" style={{ width: 44, height: 44, objectFit: "cover", borderRadius: 8 }} />
-                )}
-                <Stars value={entry.rating} readOnly />
-              </div>
+              <EntryRow key={uid} entry={entry} member={members[uid]} />
             ))}
             {Object.keys(entries).length === 0 && <p>Noch keine Bewertungen.</p>}
           </div>
