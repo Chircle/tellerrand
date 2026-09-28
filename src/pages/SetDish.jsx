@@ -89,9 +89,10 @@ export default function SetDish() {
 
   return (
     <div className="screen">
-      <h2>Gericht — {monthLabel(monthId)}</h2>
+      <h2 className="title-label">Gericht — {monthLabel(monthId)}</h2>
       {isPast && <p>Du trägst hier einen vergangenen Monat nach. Passt schon so. 👍</p>}
 
+      <div className="card stack" style={{ gap: 18 }}>
       <div className="stack">
         <label style={{ fontSize: 13 }}>Wer hat gekocht?</label>
         <select
@@ -131,6 +132,8 @@ export default function SetDish() {
       <div className="stack">
         <label style={{ fontSize: 13 }}>oder Rezept-Link (optional)</label>
         <input placeholder="https://…" value={recipeUrl} onChange={(e) => setRecipeUrl(e.target.value)} />
+      </div>
+
       </div>
 
       <button className="btn block" disabled={!dishName.trim() || busy} onClick={save}>

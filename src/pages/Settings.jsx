@@ -4,6 +4,7 @@ import { db, doc, updateDoc, deleteDoc, arrayUnion, logout, auth, collection, on
 import { currentMonthId, monthLabel } from "../utils/rotation.js";
 import Avatar from "../components/Avatar.jsx";
 import AvatarEditor from "./AvatarEditor.jsx";
+import Sticker from "../components/Stickers.jsx";
 
 function JoinRequests({ group }) {
   const [requests, setRequests] = useState({});
@@ -97,7 +98,7 @@ export default function Settings() {
     return (
       <div className="screen">
         <button className="btn ghost" style={{ alignSelf: "flex-start" }} onClick={() => setEditingAvatar(false)}>‹ Zurück</button>
-        <h2>Dein Icon</h2>
+        <h2 className="title-label">Dein Icon</h2>
         <AvatarEditor initial={profile.avatar} onSave={saveAvatar} saving={saving} />
       </div>
     );
@@ -105,11 +106,12 @@ export default function Settings() {
 
   return (
     <div className="screen">
-      <h2>Einstellungen</h2>
+      <h2 className="title-label">Einstellungen</h2>
 
       <JoinRequests group={group} />
 
       <div className="card stack" style={{ alignItems: "flex-start" }}>
+        <Sticker type="bow" size={52} rot={16} par={0.03} pos={{ top: -20, right: 16 }} />
         <p style={{ fontSize: 13 }}>Dein Profil</p>
         <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
           <Avatar avatar={profile.avatar} size={56} />
@@ -121,6 +123,7 @@ export default function Settings() {
       </div>
 
       <div className="card stack" style={{ alignItems: "flex-start" }}>
+        <Sticker type="jar" size={64} rot={8} par={0.05} pos={{ top: -26, right: 12 }} />
         <p style={{ fontSize: 13 }}>Gruppe</p>
         <strong style={{ color: "var(--text)" }}>{group.name}</strong>
         <p>Einladungscode: <span className="chip">{group.inviteCode}</span></p>
@@ -143,6 +146,7 @@ export default function Settings() {
       </div>
 
       <div className="card stack" style={{ alignItems: "flex-start" }}>
+        <Sticker type="sun" size={58} rot={-8} spin={0.06} pos={{ top: -22, right: 14 }} />
         <p style={{ fontSize: 13 }}>Diesen Monat aussetzen</p>
         <p>Für Sonderfälle wie einen gemeinsamen Urlaub. Der Monat zählt dann nicht in der Rotation.</p>
         {alreadySkipped ? (

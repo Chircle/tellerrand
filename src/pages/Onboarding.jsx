@@ -29,7 +29,7 @@ function CreateProfileStep({ onDone }) {
 
   return (
     <div className="screen">
-      <h2>Willkommen! 👋</h2>
+      <h2 className="title-label">Willkommen!</h2>
       <p>Wie sollen dich die anderen sehen?</p>
       <input placeholder="Dein Name" value={name} onChange={(e) => setName(e.target.value)} />
       <AvatarEditorInline avatar={avatar} setAvatar={setAvatar} />
@@ -156,7 +156,7 @@ function GroupStep({ profile, onDone }) {
   if (!mode) {
     return (
       <div className="screen">
-        <h2>Hallo {profile.displayName}!</h2>
+        <h2 className="title-label">Hallo {profile.displayName}!</h2>
         <p>Erstell eine neue Gruppe oder tritt mit einem Code bei.</p>
         <button className="btn block" onClick={() => setMode("create")}>Neue Gruppe gründen</button>
         <button className="btn secondary block" onClick={() => setMode("join")}>Mit Code beitreten</button>
@@ -168,7 +168,7 @@ function GroupStep({ profile, onDone }) {
     return (
       <div className="screen">
         <button className="btn ghost" style={{ alignSelf: "flex-start" }} onClick={() => setMode(null)}>‹ Zurück</button>
-        <h2>Wie heißt eure Gruppe?</h2>
+        <h2 className="title-label">Wie heißt eure Gruppe?</h2>
         <input placeholder="z. B. Pfannenbande" value={groupName} onChange={(e) => setGroupName(e.target.value)} />
         {error && <p style={{ color: "var(--tomato)" }}>{error}</p>}
         <button className="btn block" disabled={!groupName.trim() || busy} onClick={create}>
@@ -181,7 +181,7 @@ function GroupStep({ profile, onDone }) {
   return (
     <div className="screen">
       <button className="btn ghost" style={{ alignSelf: "flex-start" }} onClick={() => setMode(null)}>‹ Zurück</button>
-      <h2>Einladungscode</h2>
+      <h2 className="title-label">Einladungscode</h2>
       <input placeholder="z. B. PFANNE-7213" value={code} onChange={(e) => setCode(e.target.value.toUpperCase())} />
       {error && <p style={{ color: "var(--tomato)" }}>{error}</p>}
       <button className="btn block" disabled={!code.trim() || busy} onClick={join}>

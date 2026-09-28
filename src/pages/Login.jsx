@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { loginWithGoogle, loginWithEmail, registerWithEmail, resetPassword } from "../firebase.js";
+import Sticker from "../components/Stickers.jsx";
 
 function friendlyError(code) {
   switch (code) {
@@ -18,6 +19,21 @@ function friendlyError(code) {
     default:
       return "Etwas ist schiefgelaufen. Versuch's nochmal.";
   }
+}
+
+// Buchdeckel: Tartan-Stoff + Sticker. Muss auf Modul-Ebene stehen (nicht in
+// Login), sonst würde React die Eingabefelder bei jedem Tastendruck neu
+// aufbauen und sie verlören den Fokus.
+function Cover({ children }) {
+  return (
+    <div className="cover">
+      <Sticker type="stamp" size={84} rot={-7} par={0.05} glyph="pumpkin" label="Herbst" sub="Tellerrand" pos={{ top: 26, left: 22 }} />
+      <Sticker type="roll" size={92} rot={9} spin={0.04} par={0.03} pos={{ top: 22, right: 20 }} />
+      <Sticker type="candle" size={78} rot={-6} par={0.06} pos={{ bottom: 28, left: 30 }} />
+      <Sticker type="jar" size={104} rot={7} par={0.04} pos={{ bottom: 22, right: 26 }} />
+      {children}
+    </div>
+  );
 }
 
 export default function Login() {
@@ -81,60 +97,60 @@ export default function Login() {
     }
   };
 
-  const Logo = (
-    <svg width="56" height="56" viewBox="0 0 80 80">
-      <circle cx="40" cy="44" r="30" fill="#e8a33d" />
-      <circle cx="30" cy="41" r="4.5" fill="#1c1a17" />
-      <circle cx="50" cy="41" r="4.5" fill="#1c1a17" />
-      <path d="M28 56 Q40 66 52 56" stroke="#1c1a17" strokeWidth="3" fill="none" strokeLinecap="round" />
-      <path d="M22 24 Q22 6 40 6 Q58 6 58 24 L58 28 L22 28 Z" fill="#f2ede4" />
-    </svg>
-  );
-
   if (mode === "start") {
     return (
-      <div className="center-screen">
-        {Logo}
-        <div>
-          <h1 style={{ fontSize: 30 }}>Tellerrand</h1>
-          <p style={{ marginTop: 8 }}>Eure monatliche Kochchallenge. Ein Gericht, drei Küchen, viele Sterne.</p>
+      <Cover>
+        <div className="cover-label">
+          <Sticker type="bow" size={62} rot={-14} par={0.02} pos={{ top: -26, left: -14 }} />
+          <Sticker type="fawn" size={92} rot={3} par={0.03} pos={{ top: -64, right: -6 }} />
+          <div className="cover-title">Tellerrand</div>
+          <p style={{ marginTop: 16, fontFamily: "var(--font-serif)", fontStyle: "italic", fontSize: 17 }}>
+            Euer monatliches Kochbuch.<br />Ein Gericht, viele Küchen, ganz viele Sterne.
+          </p>
+          <Sticker type="cookie" size={62} rot={14} spin={0.1} pos={{ bottom: -26, right: -10 }} />
+          <Sticker type="berry" size={50} rot={-10} par={0.05} pos={{ bottom: -22, left: 12 }} />
         </div>
-        {error && <p style={{ color: "var(--tomato)" }}>{error}</p>}
-        <div className="stack" style={{ width: "100%" }}>
+        {error && <p style={{ color: "#ffe3d6", textAlign: "center", marginBottom: 12 }}>{error}</p>}
+        <div className="stack" style={{ position: "relative", zIndex: 2 }}>
           <button className="btn block" onClick={handleGoogle}>Mit Google anmelden</button>
           <button className="btn secondary block" onClick={() => setMode("login")}>Mit E-Mail anmelden</button>
         </div>
-      </div>
+      </Cover>
     );
   }
 
   return (
-    <div className="screen" style={{ justifyContent: "center" }}>
-      <button className="btn ghost" style={{ alignSelf: "flex-start" }} onClick={() => setMode("start")}>‹ Zurück</button>
-      {Logo}
-      <h2>{mode === "register" ? "Konto erstellen" : "Anmelden"}</h2>
+    <Cover>
+      <div className="cover-label" style={{ textAlign: "left" }}>
+        <Sticker type="bow" size={56} rot={-14} par={0.02} pos={{ top: -24, left: -12 }} />
+        <div className="stack" style={{ gap: 14 }}>
+          <button className="btn ghost" style={{ alignSelf: "flex-start", padding: "0 4px" }} onClick={() => setMode("start")}>‹ Zurück</button>
+          <h2 style={{ fontSize: 28 }}>{mode === "register" ? "Konto erstellen" : "Anmelden"}</h2>
 
-      <form className="stack" onSubmit={handleEmailSubmit}>
-        <input type="email" placeholder="E-Mail" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
-        <input type="password" placeholder="Passwort" autoComplete={mode === "register" ? "new-password" : "current-password"} value={password} onChange={(e) => setPassword(e.target.value)} required minLength={mode === "register" ? 8 : 6} />
-        {mode === "register" && (
-          <input type="password" placeholder="Passwort wiederholen" autoComplete="new-password" value={password2} onChange={(e) => setPassword2(e.target.value)} required minLength={8} />
-        )}
-        {error && <p style={{ color: "var(--tomato)" }}>{error}</p>}
-        {info && <p style={{ color: "var(--herb)" }}>{info}</p>}
-        <button className="btn block" type="submit" disabled={busy}>
-          {busy ? "Einen Moment…" : mode === "register" ? "Konto erstellen" : "Anmelden"}
-        </button>
-      </form>
+          <form className="stack" onSubmit={handleEmailSubmit}>
+            <input type="email" placeholder="E-Mail" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+            <input type="password" placeholder="Passwort" autoComplete={mode === "register" ? "new-password" : "current-password"} value={password} onChange={(e) => setPassword(e.target.value)} required minLength={mode === "register" ? 8 : 6} />
+            {mode === "register" && (
+              <input type="password" placeholder="Passwort wiederholen" autoComplete="new-password" value={password2} onChange={(e) => setPassword2(e.target.value)} required minLength={8} />
+            )}
+            {error && <p style={{ color: "var(--tomato)", fontWeight: 700 }}>{error}</p>}
+            {info && <p style={{ color: "var(--herb)", fontWeight: 700 }}>{info}</p>}
+            <button className="btn block" type="submit" disabled={busy}>
+              {busy ? "Einen Moment…" : mode === "register" ? "Konto erstellen" : "Anmelden"}
+            </button>
+          </form>
 
-      {mode === "login" ? (
-        <div className="stack" style={{ alignItems: "center" }}>
-          <button className="btn ghost" onClick={handleReset}>Passwort vergessen?</button>
-          <button className="btn ghost" onClick={() => setMode("register")}>Noch kein Konto? Registrieren</button>
+          {mode === "login" ? (
+            <div className="stack" style={{ alignItems: "center", gap: 4 }}>
+              <button className="btn ghost" onClick={handleReset}>Passwort vergessen?</button>
+              <button className="btn ghost" onClick={() => setMode("register")}>Noch kein Konto? Registrieren</button>
+            </div>
+          ) : (
+            <button className="btn ghost" onClick={() => setMode("login")}>Schon ein Konto? Anmelden</button>
+          )}
         </div>
-      ) : (
-        <button className="btn ghost" onClick={() => setMode("login")}>Schon ein Konto? Anmelden</button>
-      )}
-    </div>
+        <Sticker type="cookie" size={54} rot={14} spin={0.1} pos={{ bottom: -24, right: -8 }} />
+      </div>
+    </Cover>
   );
 }

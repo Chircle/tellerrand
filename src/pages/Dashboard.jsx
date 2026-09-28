@@ -5,6 +5,8 @@ import { db, doc, onSnapshot, collection } from "../firebase.js";
 import { currentMonthId, hostForMonth, monthLabel } from "../utils/rotation.js";
 import Avatar from "../components/Avatar.jsx";
 import Stars from "../components/Stars.jsx";
+import Sticker from "../components/Stickers.jsx";
+import Lightbox from "../components/Lightbox.jsx";
 
 export default function Dashboard() {
   const { authUser, profile, group } = useApp();
@@ -12,6 +14,7 @@ export default function Dashboard() {
   const [monthDoc, setMonthDoc] = useState(undefined);
   const [entries, setEntries] = useState({});
   const [members, setMembers] = useState({});
+  const [zoomSrc, setZoomSrc] = useState(null);
 
   const hostUid = group
     ? hostForMonth(monthId, {
@@ -57,12 +60,14 @@ export default function Dashboard() {
 
   return (
     <div className="screen">
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <div>
-          <p style={{ fontSize: 13 }}>{group.name}</p>
-          <h1 style={{ fontSize: 24 }}>{monthLabel(monthId)}</h1>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
+        <div className="stack" style={{ gap: 8 }}>
+          <span className="eyebrow">{group.name}</span>
+          <h1 className="title-label">{monthLabel(monthId)}</h1>
         </div>
-        <span className="chip">KW {getWeek(today)}</span>
+        <div className="postmark" aria-label={`Kalenderwoche ${getWeek(today)}`}>
+          <span>KW</span><b>{getWeek(today)}</b>
+        </div>
       </div>
 
       {monthDoc === undefined && <p>Lädt…</p>}
@@ -74,8 +79,9 @@ export default function Dashboard() {
       )}
 
       {monthDoc === null && hostUid && isHost && (
-        <div className="card stack" style={{ alignItems: "flex-start" }}>
-          <h2 style={{ fontSize: 18 }}>Du bist dran! 🎉</h2>
+        <div className="card taped stack" style={{ alignItems: "flex-start" }}>
+          <Sticker type="berry" size={58} rot={12} par={0.04} pos={{ top: -22, right: 14 }} />
+          <h2 style={{ fontSize: 24 }}>Du bist dran!</h2>
           <p>Lege das Gericht für {monthLabel(monthId)} fest, damit die anderen loslegen können.</p>
           <Link to="/set-dish" className="btn">Gericht festlegen</Link>
         </div>
@@ -92,15 +98,17 @@ export default function Dashboard() {
 
       {monthDoc && (
         <>
-          <div className="card stack" style={{ alignItems: "flex-start" }}>
+          <div className="card taped stack" style={{ alignItems: "flex-start" }}>
+            <Sticker type="bow" size={58} rot={-14} par={0.02} pos={{ top: -24, left: -12 }} />
+            <Sticker type="fawn" size={78} rot={3} par={0.03} pos={{ top: -52, right: 4 }} />
             <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
               <Avatar avatar={members[hostUid]?.avatar} size={36} />
               <span className="chip">Gastgeber: {members[hostUid]?.displayName}</span>
             </div>
-            <h2 style={{ fontSize: 22 }}>{monthDoc.dishName}</h2>
+            <h2 style={{ fontSize: 28 }}>{monthDoc.dishName}</h2>
             {monthDoc.introText && <p>{monthDoc.introText}</p>}
             {monthDoc.referenceImageUrl && (
-              <img src={monthDoc.referenceImageUrl} alt="Orientierungsbild" style={{ width: "100%", borderRadius: "var(--radius-m)" }} />
+              <img src={monthDoc.referenceImageUrl} alt="Orientierungsbild" onClick={() => setZoomSrc(monthDoc.referenceImageUrl)} style={{ width: "100%", cursor: "zoom-in", border: "8px solid #fff", borderBottomWidth: 24, borderRadius: 3, transform: "rotate(-1deg)", boxShadow: "0 4px 10px rgba(74,56,45,.3)" }} />
             )}
             {monthDoc.recipeText && (
               <details style={{ width: "100%" }}>
@@ -114,7 +122,8 @@ export default function Dashboard() {
           </div>
 
           <div className="card stack">
-            <p style={{ fontSize: 13 }}>Abgaben</p>
+            <Sticker type="cookie" size={52} rot={14} spin={0.1} pos={{ bottom: -18, right: 12 }} />
+            <p style={{ fontSize: 13, fontWeight: 800 }}>Abgaben</p>
             <div style={{ display: "flex", gap: 14 }}>
               {group.memberIds.map((uid) => (
                 <div key={uid} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
@@ -134,7 +143,7 @@ export default function Dashboard() {
             <div className="card stack" style={{ alignItems: "flex-start" }}>
               <p style={{ fontSize: 13 }}>Deine Bewertung</p>
               <Stars value={myEntry.rating} readOnly />
-              {myEntry.photoUrl && <img src={myEntry.photoUrl} alt="Dein Gericht" style={{ width: "100%", borderRadius: "var(--radius-m)" }} />}
+              {myEntry.photoUrl && <img src={myEntry.photoUrl} alt="Dein Gericht" onClick={() => setZoomSrc(myEntry.photoUrl)} style={{ width: "100%", cursor: "zoom-in", border: "8px solid #fff", borderBottomWidth: 24, borderRadius: 3, transform: "rotate(1deg)", boxShadow: "0 4px 10px rgba(74,56,45,.3)" }} />}
               <Link to="/submit" className="btn ghost">Bearbeiten</Link>
             </div>
           ) : (
@@ -142,6 +151,7 @@ export default function Dashboard() {
           )}
         </>
       )}
+      {zoomSrc && <Lightbox src={zoomSrc} onClose={() => setZoomSrc(null)} />}
     </div>
   );
 }

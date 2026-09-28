@@ -37,3 +37,12 @@ export function hostForMonth(monthId, { seasonStart, rotationOrder, skippedMonth
   }
   return null;
 }
+
+// Jahreszeit für den Monats-Stempel (Nordhalbkugel).
+export function seasonOf(monthId) {
+  const m = Number(monthId.split("-")[1]);
+  if (m >= 3 && m <= 5) return { glyph: "tulip", label: "Frühling" };
+  if (m >= 6 && m <= 8) return { glyph: "berry", label: "Sommer" };
+  if (m >= 9 && m <= 11) return { glyph: "pumpkin", label: "Herbst" };
+  return { glyph: "flake", label: "Winter" };
+}

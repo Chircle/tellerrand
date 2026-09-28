@@ -59,12 +59,13 @@ export default function Submit() {
 
   return (
     <div className="screen">
-      <h2>Dein Gericht — {monthLabel(monthId)}</h2>
+      <h2 className="title-label">Dein Gericht — {monthLabel(monthId)}</h2>
       {isPast && <p>Du trägst hier einen vergangenen Monat nach.</p>}
 
+      <div className="card stack" style={{ gap: 18 }}>
       <div className="stack">
         <label style={{ fontSize: 13 }}>Foto</label>
-        <input type="file" accept="image/*" onChange={handlePhoto} />
+        <input type="file" accept="image/*" capture="environment" onChange={handlePhoto} />
         {photo && <img src={photo} alt="Dein Gericht" style={{ width: "100%", borderRadius: "var(--radius-m)" }} />}
       </div>
 
@@ -77,6 +78,8 @@ export default function Submit() {
       <div className="stack">
         <label style={{ fontSize: 13 }}>Kommentar (optional)</label>
         <textarea rows={3} placeholder="Wie ist es gelaufen?" value={comment} onChange={(e) => setComment(e.target.value)} />
+      </div>
+
       </div>
 
       <button className="btn block" disabled={rating === 0 || busy} onClick={save}>

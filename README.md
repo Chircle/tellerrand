@@ -139,6 +139,18 @@ Die Rotation wird **nicht** fest gespeichert, sondern aus `seasonStart`,
 `rotationOrder` und `skippedMonths` berechnet (`src/utils/rotation.js`).
 Ausgesetzte Monate verbrauchen keinen "Zug" in der Rotation.
 
+## Design ("Kochbuch-Scrapbook")
+
+Alles Visuelle steckt in `src/styles/global.css` (Design-Tokens oben in `:root`)
+und `src/components/Stickers.jsx` (selbst gezeichnete SVG-Motive):
+
+- **Vichy-Stoff** als App-Hintergrund, **Tartan** für Buchdeckel und Tabbar (reines CSS, keine Bilddateien)
+- **Papier-Karten** mit ausgefranstem Rand (SVG-Filter `#deckle`, definiert in `App.jsx`)
+- **Sticker** mit weißem Stanzrand: antippen/überfahren = wackeln, hüpfen, drehen; beim Scrollen bewegen sie sich leicht mit
+- **Buch** (`Book.jsx`): echte 3D-Seitenumschlag-Animation um den Buchrücken, Seite folgt beim Wischen dem Finger
+
+Neue Sticker: Funktion in `Stickers.jsx` ergänzen, in `ART`/`ANIM`/`LABELS` eintragen, dann `<Sticker type="…" />` verwenden.
+
 ## Struktur
 
 ```
