@@ -213,6 +213,8 @@ export default function Settings() {
   return (
     <div className="screen">
       <h2 className="title-label">Einstellungen</h2>
+      
+      <Link to="/stats" className="btn secondary block">📊 Statistiken ansehen</Link>
 
       <JoinRequests group={group} />
 

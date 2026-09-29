@@ -11,6 +11,7 @@ import SetDish from "./pages/SetDish.jsx";
 import Submit from "./pages/Submit.jsx";
 import Book from "./pages/Book.jsx";
 import Settings from "./pages/Settings.jsx";
+import Stats from "./pages/Stats.jsx";
 
 const iconProps = { width: 26, height: 26, viewBox: "0 0 32 32", fill: "none", stroke: "currentColor", strokeWidth: 2.4, strokeLinecap: "round", strokeLinejoin: "round" };
 
@@ -68,6 +69,7 @@ function Gate() {
         <Route path="/submit" element={<Submit />} />
         <Route path="/book" element={<Book />} />
         <Route path="/settings" element={<Settings />} />
+        <Route path="/stats" element={<Stats />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
       <Tabbar />
