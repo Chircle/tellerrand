@@ -25,6 +25,7 @@ import {
   onSnapshot,
   serverTimestamp,
   arrayUnion,
+  arrayRemove,
 } from "firebase/firestore";
 
 // Alle Werte kommen ausschließlich aus Umgebungsvariablen (.env lokal,
@@ -98,4 +99,5 @@ export {
   onSnapshot,
   serverTimestamp,
   arrayUnion,
+  arrayRemove,
 };

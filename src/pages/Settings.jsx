@@ -1,10 +1,116 @@
 import { useEffect, useState } from "react";
 import { useApp } from "../context/AppContext.jsx";
-import { db, doc, updateDoc, deleteDoc, arrayUnion, logout, auth, collection, onSnapshot } from "../firebase.js";
+import { db, doc, updateDoc, deleteDoc, arrayUnion, arrayRemove, logout, auth, collection, onSnapshot } from "../firebase.js";
 import { currentMonthId, monthLabel } from "../utils/rotation.js";
 import Avatar from "../components/Avatar.jsx";
 import AvatarEditor from "./AvatarEditor.jsx";
 import Sticker from "../components/Stickers.jsx";
+
+function Members({ group }) {
+  const [users, setUsers] = useState({});
+  const [confirmUid, setConfirmUid] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const isAdmin = group.createdBy === auth.currentUser.uid;
+
+  useEffect(() => {
+    const unsubs = group.memberIds.map((uid) =>
+      onSnapshot(doc(db, "users", uid), (snap) => {
+        if (snap.exists()) setUsers((u) => ({ ...u, [uid]: snap.data() }));
+      })
+    );
+    return () => unsubs.forEach((u) => u());
+  }, [group.memberIds.join(",")]);
+
+  // Kochreihenfolge: rotationOrder, bereinigt um Nicht-Mitglieder;
+  // Mitglieder ohne Eintrag werden hinten angehängt.
+  const order = group.rotationOrder || [];
+  const ordered = [
+    ...order.filter((uid) => group.memberIds.includes(uid)),
+    ...group.memberIds.filter((uid) => !order.includes(uid)),
+  ];
+
+  const run = async (fn) => {
+    setBusy(true);
+    setError("");
+    try {
+      await fn();
+    } catch (e) {
+      setError("Das hat nicht geklappt. Prüf deine Verbindung und die Firestore-Regeln.");
+    }
+    setBusy(false);
+  };
+
+  const move = (i, dir) => {
+    const j = i + dir;
+    if (j < 0 || j >= ordered.length) return;
+    const next = [...ordered];
+    [next[i], next[j]] = [next[j], next[i]];
+    run(() => updateDoc(doc(db, "groups", group.id), { rotationOrder: next }));
+  };
+
+  const remove = (uid) =>
+    run(async () => {
+      await updateDoc(doc(db, "groups", group.id), {
+        memberIds: arrayRemove(uid),
+        rotationOrder: arrayRemove(uid),
+      });
+      setConfirmUid(null);
+    });
+
+  return (
+    <div className="card stack" style={{ alignItems: "stretch" }}>
+      <p style={{ fontSize: 13, fontWeight: 800 }}>Mitglieder &amp; Kochreihenfolge</p>
+
+      {ordered.map((uid, i) => {
+        const u = users[uid];
+        const isCreator = uid === group.createdBy;
+        return (
+          <div key={uid} className="stack" style={{ gap: 8 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <span className="chip" style={{ minWidth: 30, justifyContent: "center", padding: "4px 8px" }}>{i + 1}</span>
+              <Avatar avatar={u?.avatar} size={38} />
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <strong style={{ display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                  {u?.displayName || "…"}{uid === auth.currentUser.uid ? " (du)" : ""}
+                </strong>
+                {isCreator && <span style={{ fontSize: 12, color: "var(--text-dim)" }}>Gruppenersteller</span>}
+              </div>
+
+              {isAdmin && (
+                <div style={{ display: "flex", gap: 4 }}>
+                  <button className="btn secondary" style={{ padding: "6px 10px" }} disabled={busy || i === 0} onClick={() => move(i, -1)} aria-label="Weiter nach vorne">▲</button>
+                  <button className="btn secondary" style={{ padding: "6px 10px" }} disabled={busy || i === ordered.length - 1} onClick={() => move(i, 1)} aria-label="Weiter nach hinten">▼</button>
+                </div>
+              )}
+            </div>
+
+            {isAdmin && !isCreator && (
+              confirmUid === uid ? (
+                <div style={{ display: "flex", gap: 8, alignItems: "center", justifyContent: "flex-end" }}>
+                  <span style={{ fontSize: 13 }}>{u?.displayName || "Person"} wirklich entfernen?</span>
+                  <button className="btn ghost" onClick={() => setConfirmUid(null)}>Nein</button>
+                  <button className="btn" style={{ background: "var(--tomato)", padding: "8px 14px" }} disabled={busy} onClick={() => remove(uid)}>Ja, entfernen</button>
+                </div>
+              ) : (
+                <div style={{ display: "flex", justifyContent: "flex-end" }}>
+                  <button className="btn ghost" style={{ fontSize: 13 }} onClick={() => setConfirmUid(uid)}>Aus Gruppe entfernen</button>
+                </div>
+              )
+            )}
+          </div>
+        );
+      })}
+
+      {error && <p style={{ color: "var(--tomato)", fontWeight: 700 }}>{error}</p>}
+      <p style={{ fontSize: 12 }}>
+        {isAdmin
+          ? "Die Nummer zeigt, wer wann als Gastgeber dran ist. Änderungen wirken sich auf Monate aus, für die noch kein Gericht eingetragen ist. Bereits gespeicherte Monate behalten ihren Gastgeber."
+          : "Nur der Gruppenersteller kann Mitglieder entfernen oder die Reihenfolge ändern."}
+      </p>
+    </div>
+  );
+}
 
 function JoinRequests({ group }) {
   const [requests, setRequests] = useState({});
@@ -144,6 +250,8 @@ export default function Settings() {
           </button>
         )}
       </div>
+
+      <Members group={group} />
 
       <div className="card stack" style={{ alignItems: "flex-start" }}>
         <Sticker type="sun" size={58} rot={-8} spin={0.06} pos={{ top: -22, right: 14 }} />

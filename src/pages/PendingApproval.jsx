@@ -33,8 +33,8 @@ export default function PendingApproval() {
       <div className="center-screen">
         <div style={{ fontSize: 40 }}>😕</div>
         <div>
-          <h2>Anfrage abgelehnt</h2>
-          <p style={{ marginTop: 8 }}>Deine Anfrage für "{group.name}" wurde nicht angenommen.</p>
+          <h2>Kein Zugang mehr</h2>
+          <p style={{ marginTop: 8 }}>Für "{group.name}" wurde deine Anfrage abgelehnt, oder du wurdest aus der Gruppe entfernt.</p>
         </div>
         <button className="btn block" disabled={busy} onClick={withdraw}>
           {busy ? "Einen Moment…" : "Zurück zur Gruppenauswahl"}

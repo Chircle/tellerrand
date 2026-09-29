@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useApp } from "../context/AppContext.jsx";
 import { db, doc, setDoc, getDoc, auth, serverTimestamp } from "../firebase.js";
@@ -17,6 +17,8 @@ export default function Submit() {
   const [comment, setComment] = useState("");
   const [busy, setBusy] = useState(false);
   const [loaded, setLoaded] = useState(false);
+  const camRef = useRef(null);
+  const galleryRef = useRef(null);
 
   useEffect(() => {
     (async () => {
@@ -37,6 +39,7 @@ export default function Submit() {
 
   const handlePhoto = async (e) => {
     const file = e.target.files?.[0];
+    e.target.value = "";
     if (!file) return;
     setPhoto(await compressImage(file));
   };
@@ -65,7 +68,12 @@ export default function Submit() {
       <div className="card stack" style={{ gap: 18 }}>
       <div className="stack">
         <label style={{ fontSize: 13 }}>Foto</label>
-        <input type="file" accept="image/*" capture="environment" onChange={handlePhoto} />
+          <input ref={camRef} type="file" accept="image/*" capture="environment" hidden onChange={handlePhoto} />
+          <input ref={galleryRef} type="file" accept="image/*" hidden onChange={handlePhoto} />
+          <div style={{ display: "flex", gap: 8 }}>
+            <button type="button" className="btn secondary" style={{ flex: 1 }} onClick={() => camRef.current?.click()}>📷 Foto aufnehmen</button>
+            <button type="button" className="btn secondary" style={{ flex: 1 }} onClick={() => galleryRef.current?.click()}>🖼️ Aus Galerie</button>
+          </div>
         {photo && <img src={photo} alt="Dein Gericht" style={{ width: "100%", borderRadius: "var(--radius-m)" }} />}
       </div>
 
