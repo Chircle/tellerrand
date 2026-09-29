@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { useApp } from "../context/AppContext.jsx";
 import { db, doc, updateDoc, deleteDoc, arrayUnion, arrayRemove, logout, auth, collection, onSnapshot } from "../firebase.js";
 import { currentMonthId, monthLabel } from "../utils/rotation.js";
@@ -213,7 +214,7 @@ export default function Settings() {
   return (
     <div className="screen">
       <h2 className="title-label">Einstellungen</h2>
-      
+
       <Link to="/stats" className="btn secondary block">📊 Statistiken ansehen</Link>
 
       <JoinRequests group={group} />
