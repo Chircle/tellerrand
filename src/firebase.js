@@ -10,6 +10,7 @@ import {
   sendPasswordResetEmail,
   sendEmailVerification,
   reload,
+  getIdTokenResult,
 } from "firebase/auth";
 import {
   getFirestore,
@@ -72,10 +73,19 @@ export function resendVerification() {
 
 // Lädt den aktuellen Nutzer neu von Firebase (z. B. nachdem er den
 // Verifizierungslink angeklickt hat) und meldet, ob die E-Mail jetzt bestätigt ist.
+//
+// WICHTIG: reload() aktualisiert nur das lokale Profil-Objekt (die Anzeige),
+// nicht das signierte Zugangs-Token, das Firestore bei jedem Schreibzugriff
+// prüft. Ohne den erzwungenen Token-Refresh (getIdTokenResult mit
+// forceRefresh=true) bleibt das alte, noch "unverifizierte" Token aktiv und
+// jeder Schreibversuch scheitert an den Security Rules — auch nach einem
+// Reload der Seite, weil Firebase das alte Token zwischenspeichert und
+// solange wiederverwendet, bis es natürlich abläuft (~1 Stunde).
 export async function refreshCurrentUser() {
   if (!auth.currentUser) return false;
   await reload(auth.currentUser);
-  return auth.currentUser.emailVerified;
+  const tokenResult = await getIdTokenResult(auth.currentUser, true); // true = force refresh
+  return tokenResult.claims.email_verified === true;
 }
 
 export function logout() {
