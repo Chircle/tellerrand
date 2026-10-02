@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { useApp } from "../context/AppContext.jsx";
 import { db, doc, setDoc, getDoc, auth, onSnapshot } from "../firebase.js";
 import { currentMonthId, monthLabel, hostForMonth } from "../utils/rotation.js";
-import { compressImage } from "../utils/imageCompress.js";
+import { compressImage, rotateImage } from "../utils/imageCompress.js";
 
 export default function SetDish() {
   const { group } = useApp();
@@ -121,7 +121,18 @@ export default function SetDish() {
       <div className="stack">
         <label style={{ fontSize: 13 }}>Orientierungsbild (optional)</label>
         <input type="file" accept="image/*" onChange={handleImage} />
-        {image && <img src={image} alt="Vorschau" style={{ width: "100%", borderRadius: "var(--radius-m)" }} />}
+        {image && (
+          <>
+            <img src={image} alt="Vorschau" style={{ width: "100%", borderRadius: "var(--radius-m)" }} />
+            <button
+              type="button"
+              className="btn secondary"
+              onClick={async () => setImage(await rotateImage(image, 90))}
+            >
+              🔄 Drehen
+            </button>
+          </>
+        )}
       </div>
 
       <div className="stack">
