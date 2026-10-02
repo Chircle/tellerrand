@@ -87,6 +87,7 @@ export default function Stats() {
   const { group, profile } = useApp();
   const [members, setMembers] = useState({});
   const [stats, setStats] = useState(undefined); // undefined = lädt, null = Fehler
+  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     if (!group) return;
@@ -96,6 +97,17 @@ export default function Stats() {
       setMembers(map);
     });
   }, [group?.id]);
+  
+  const refresh = () => {
+    if (!group) return;
+    setRefreshing(true);
+    loadStats(group)
+      .then(setStats)
+      .catch(() => setStats(null))
+      .finally(() => setRefreshing(false));
+  };
+  // Lädt beim ersten Öffnen einmal automatisch; danach nur noch per Button,
+  // siehe loadStats()-Kommentar oben zur Begründung (kein Live-Listener).
 
   useEffect(() => {
     if (!group) return;
@@ -109,10 +121,22 @@ export default function Stats() {
 
   return (
     <div className="screen">
-      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-        <Link to="/settings" className="btn ghost" style={{ padding: "6px 10px" }} aria-label="Zurück">‹</Link>
-        <h2 className="title-label">Statistiken</h2>
+      <div style={{ display: "flex", alignItems: "center", gap: 10, justifyContent: "space-between" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <Link to="/settings" className="btn ghost" style={{ padding: "6px 10px" }} aria-label="Zurück">‹</Link>
+          <h2 className="title-label">Statistiken</h2>
+        </div>
+       <button
+          className="btn secondary"
+          style={{ padding: "8px 12px", fontSize: 13 }}
+          onClick={refresh}
+          disabled={refreshing || stats === undefined}
+          aria-label="Statistik aktualisieren"
+        >
+          {refreshing ? "…" : "🔄"}
+        </button>
       </div>
+
 
       {stats === undefined && (
         <div className="stack" style={{ alignItems: "center", padding: "30px 0" }}>
