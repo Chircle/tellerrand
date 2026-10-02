@@ -40,3 +40,30 @@ export function compressImage(file, { maxDim = 1200, quality = 0.72 } = {}) {
     reader.readAsDataURL(file);
   });
 }
+
+
+// Dreht ein Bild in 90°-Schritten, indem es auf einem Canvas neu gezeichnet
+// wird — damit landet die Drehung in den eigentlichen Bilddaten und nicht
+// nur als CSS-Transform, das beim Anzeigen woanders wieder verloren ginge.
+export function rotateImage(dataUrl, degrees) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onerror = () => reject(new Error("Bild konnte nicht gedreht werden"));
+    img.onload = () => {
+      const rad = (degrees * Math.PI) / 180;
+      const swap = degrees % 180 !== 0; // bei 90°/270° tauschen Breite und Höhe
+
+      const canvas = document.createElement("canvas");
+      canvas.width = swap ? img.height : img.width;
+      canvas.height = swap ? img.width : img.height;
+
+      const ctx = canvas.getContext("2d");
+      ctx.translate(canvas.width / 2, canvas.height / 2);
+      ctx.rotate(rad);
+      ctx.drawImage(img, -img.width / 2, -img.height / 2);
+
+      resolve(canvas.toDataURL("image/jpeg", 0.85));
+    };
+    img.src = dataUrl;
+  });
+}
