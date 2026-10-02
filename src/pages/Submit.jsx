@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { useApp } from "../context/AppContext.jsx";
 import { db, doc, setDoc, getDoc, auth, serverTimestamp } from "../firebase.js";
 import { currentMonthId, monthLabel } from "../utils/rotation.js";
-import { compressImage } from "../utils/imageCompress.js";
+import { compressImage, rotateImage } from "../utils/imageCompress.js";
 import Stars from "../components/Stars.jsx";
 
 export default function Submit() {
@@ -74,7 +74,18 @@ export default function Submit() {
             <button type="button" className="btn secondary" style={{ flex: 1 }} onClick={() => camRef.current?.click()}>📷 Foto aufnehmen</button>
             <button type="button" className="btn secondary" style={{ flex: 1 }} onClick={() => galleryRef.current?.click()}>🖼️ Aus Galerie</button>
           </div>
-        {photo && <img src={photo} alt="Dein Gericht" style={{ width: "100%", borderRadius: "var(--radius-m)" }} />}
+        {photo && (
+          <>
+            <img src={photo} alt="Dein Gericht" style={{ width: "100%", borderRadius: "var(--radius-m)" }} />
+            <button
+              type="button"
+              className="btn secondary"
+              onClick={async () => setPhoto(await rotateImage(photo, 90))}
+            >
+              🔄 Drehen
+            </button>
+          </>
+        )}
       </div>
 
       <div className="stack">
