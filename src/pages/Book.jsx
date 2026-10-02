@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";   
 import { Link } from "react-router-dom";
 import { useApp } from "../context/AppContext.jsx";
 import { db, doc, getDoc, getDocs, collection, onSnapshot, auth } from "../firebase.js";
@@ -184,6 +185,114 @@ function Page({ groupId, monthId, members, skippedMonths, pageNo }) {
   );
 }
 
+// Inhaltsverzeichnis: öffnet sich als Blatt von unten, listet alle Monate
+// nach Jahr gruppiert mit Gerichtname und Sterne-Schnitt. Antippen springt
+// direkt dorthin, ohne sich durchzublättern. Nutzt den pageCache aus Book,
+// um Monate nicht doppelt zu laden, die man schon besucht hat.
+function ContentsOverlay({ group, months, currentIndex, onJump, onClose }) {
+  const [rows, setRows] = useState(null);
+  const skipped = useMemo(() => new Set(group.skippedMonths || []), [group.skippedMonths]);
+
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      const results = await Promise.all(
+        months.map(async (monthId) => {
+          if (skipped.has(monthId)) return { monthId, skipped: true };
+
+          const cached = pageCache.get(`${group.id}|${monthId}`);
+          const avgOf = (entries) => {
+            const ratings = Object.values(entries || {}).map((e) => e.rating).filter((n) => typeof n === "number");
+            return ratings.length ? ratings.reduce((a, b) => a + b, 0) / ratings.length : null;
+          };
+
+          if (cached && cached.monthDoc !== undefined) {
+            if (cached.monthDoc === null) return { monthId, empty: true };
+            return { monthId, dish: cached.monthDoc, avg: avgOf(cached.entries) };
+          }
+
+          const snap = await getDoc(doc(db, "groups", group.id, "months", monthId));
+          if (!snap.exists()) return { monthId, empty: true };
+          const entriesSnap = await getDocs(collection(db, "groups", group.id, "months", monthId, "entries"));
+          const entries = {};
+          entriesSnap.forEach((d) => (entries[d.id] = d.data()));
+          return { monthId, dish: snap.data(), avg: avgOf(entries) };
+        })
+      );
+      if (alive) setRows(results);
+    })();
+    return () => { alive = false; };
+  }, [group.id, months, skipped]);
+
+  const byYear = {};
+  (rows || []).forEach((r) => {
+    const year = r.monthId.slice(0, 4);
+    (byYear[year] ||= []).push(r);
+  });
+  const years = Object.keys(byYear).sort((a, b) => b - a);
+
+  return createPortal(
+    <div
+      onClick={onClose}
+      style={{ position: "fixed", inset: 0, zIndex: 90, background: "rgba(38,26,18,0.6)", display: "flex", alignItems: "flex-end" }}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          width: "100%",
+          maxHeight: "82vh",
+          overflowY: "auto",
+          borderRadius: "20px 20px 0 0",
+          padding: "18px 18px calc(22px + env(safe-area-inset-bottom, 0px))",
+          backgroundImage: "var(--paper-noise)",
+          backgroundColor: "var(--parchment)",
+          boxShadow: "0 -8px 24px rgba(0,0,0,.35)",
+        }}
+      >
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+          <h2 className="title-label" style={{ fontSize: 19, padding: "5px 12px 6px", borderWidth: 3 }}>Inhaltsverzeichnis</h2>
+          <button className="btn ghost" onClick={onClose} aria-label="Schließen" style={{ fontSize: 18, padding: "4px 10px" }}>✕</button>
+        </div>
+
+        {rows === null && <p>Blättere durchs Buch…</p>}
+
+        {rows !== null && years.map((year) => (
+          <div key={year} className="stack" style={{ gap: 2, marginBottom: 16 }}>
+            <p style={{ fontSize: 13, fontWeight: 800, borderBottom: "2px dotted var(--border)", padding: "0 2px 5px", marginBottom: 4 }}>
+              {year}
+            </p>
+            {byYear[year].map((r) => {
+              const idx = months.indexOf(r.monthId);
+              const isCurrent = idx === currentIndex;
+              return (
+                <button
+                  key={r.monthId}
+                  onClick={() => { onJump(idx); onClose(); }}
+                  style={{
+                    display: "flex", alignItems: "center", gap: 8,
+                    width: "100%", textAlign: "left", border: "none", cursor: "pointer",
+                    background: isCurrent ? "var(--surface-raised)" : "transparent",
+                    borderRadius: 10, padding: "9px 8px",
+                  }}
+                >
+                  <span style={{ fontSize: 13, color: "var(--text-dim)", minWidth: 66, flexShrink: 0 }}>
+                    {monthLabel(r.monthId).split(" ")[0]}
+                  </span>
+                  <span style={{ flex: 1, fontWeight: isCurrent ? 800 : 600, color: "var(--text)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {r.skipped ? "🏖️ Ausgesetzt" : r.empty ? "— noch kein Gericht" : r.dish.dishName}
+                  </span>
+                  {r.avg != null && <span className="chip" style={{ fontSize: 12, flexShrink: 0 }}>★ {r.avg.toFixed(1)}</span>}
+                </button>
+              );
+            })}
+          </div>
+        ))}
+      </div>
+    </div>,
+    document.body
+  );
+}
+
 export default function Book() {
   const { group } = useApp();
   const months = useMemo(() => (group ? allMonthsSince(group.seasonStart) : []), [group?.seasonStart]);
@@ -192,6 +301,7 @@ export default function Book() {
   const [members, setMembers] = useState({});
   const [drag, setDrag] = useState({ dx: 0, active: false });
   const [shake, setShake] = useState(false);
+  const [tocOpen, setTocOpen] = useState(false);
   const lock = useRef(false);
   const touch = useRef(null);
 
@@ -308,9 +418,24 @@ export default function Book() {
 
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <button className="btn secondary turn-btn" onClick={() => go(-1)} disabled={index === 0} aria-label="Vorherige Seite">‹</button>
-        <span className="chip">Seite {index + 1} von {months.length}</span>
+        <button
+          className="chip"
+          style={{ border: "2px dotted var(--border)", cursor: "pointer" }}
+          onClick={() => setTocOpen(true)}
+        >
+          📑 Seite {index + 1} von {months.length}
+        </button>
         <button className="btn turn-btn" onClick={() => go(1)} disabled={index === months.length - 1} aria-label="Nächste Seite">›</button>
       </div>
+      {tocOpen && (
+        <ContentsOverlay
+          group={group}
+          months={months}
+          currentIndex={index}
+          onJump={(idx) => { setFlip(null); lock.current = false; setIndex(idx); }}
+          onClose={() => setTocOpen(false)}
+        />
+      )}
     </div>
   );
 }
